@@ -1,10 +1,11 @@
 import wx; import os; import wx.dataview as dv
 from XmlLoader import XmlLoader as LoaderClass
+import PanelViews
 
 class XmlBaseClass(wx.Frame):
     """ xml Editor. """
     def __init__(self, parent, title):
-        wx.Frame.__init__(self, parent, title=title, size=(700, 500))
+        wx.Frame.__init__(self, parent, title=title, size=(800, 600))
         self.CreateStatusBar()
         
         filemenu = wx.Menu()
@@ -22,41 +23,23 @@ class XmlBaseClass(wx.Frame):
         
         self.SetMenuBar(menubar)
         
-        self.Show(True)
+        #split window
+        splitter = wx.SplitterWindow(self, -1, style=wx.SP_3D|wx.SP_BORDER)
         
-        #self.showXML()  
+        leftP = PanelViews.TreePanelView(splitter)
+        rightP = PanelViews.EditPanelView(splitter)
+        
+        #split
+        splitter.SplitVertically(leftP, rightP)
+        splitter.SetMinimumPaneSize(200)
+        
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(splitter, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+        self.SetAutoLayout(True)
+        
     
-    def UpdateTree(self, dict):
-        
-        self.dvtc = dvtc = dv.DataViewTreeCtrl(self, 1, wx.DefaultPosition, (-1,-1), wx.TR_HIDE_ROOT|wx.TR_HAS_BUTTONS)
-
-        isz = (16,16)
-        il = wx.ImageList(*isz)
-        fldridx     = il.AddIcon(wx.ArtProvider.GetIcon(wx.ART_FOLDER,      wx.ART_OTHER, isz))
-        fldropenidx = il.AddIcon(wx.ArtProvider.GetIcon(wx.ART_FOLDER_OPEN, wx.ART_OTHER, isz))
-        fileidx     = il.AddIcon(wx.ArtProvider.GetIcon(wx.ART_NORMAL_FILE, wx.ART_OTHER, isz))
-        dvtc.SetImageList(il)
-
-        self.root = dvtc.AppendContainer(dv.NullDataViewItem,
-                                         "The Root Item",
-                                         fldridx, fldropenidx)
-        for x in range(15):
-            child = dvtc.AppendContainer(self.root, "Item %d" % x,
-                                         fldridx, fldropenidx)
-
-            for y in range(5):
-                last = dvtc.AppendContainer(
-                    child, "item %d-%s" % (x, chr(ord("a")+y)),
-                    fldridx, fldropenidx)
-
-                for z in range(5):
-                    item = dvtc.AppendItem(
-                        last, "item %d-%s-%d" % (x, chr(ord("a")+y), z),
-                        fileidx)
-
-        # Set the layout so the treectrl fills the panel
-        self.Sizer = wx.BoxSizer()
-        self.Sizer.Add(dvtc, 1, wx.EXPAND)
         
     def onAbout(self, e):
         dlg = wx.MessageDialog(self, "XML Editor", "About XML Editor", wx.OK)
@@ -74,6 +57,7 @@ class XmlBaseClass(wx.Frame):
         
     def onOpen(self, e):
         """ Open Text file """
+        """
         self.dirname = ""
         baseclass = self
         dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.xml", wx.OPEN)
@@ -84,12 +68,11 @@ class XmlBaseClass(wx.Frame):
             #self.control.SetValue(f.read())
             cls1 = LoaderClass(os.path.join(self.dirname, self.filename))
             cls1.LoadXMLFile(baseclass)
-            
-            
-            
         dlg.Destroy()
+    """
         
         
 app = wx.App(False)
 frame = XmlBaseClass(None, "XML Editor")
+frame.Show(True)
 app.MainLoop()
