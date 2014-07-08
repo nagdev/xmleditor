@@ -4,6 +4,10 @@ import PanelViews
 
 class XmlBaseClass(wx.Frame):
     """ xml Editor. """
+    
+    __treePanel = PanelViews.TreePanelView
+    __editPanel = PanelViews.EditPanelView
+    
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, title=title, size=(800, 600))
         self.CreateStatusBar()
@@ -24,10 +28,10 @@ class XmlBaseClass(wx.Frame):
         self.SetMenuBar(menubar)
         
         #split window
-        splitter = wx.SplitterWindow(self, -1, style=wx.SP_3D|wx.SP_BORDER)
+        splitter = wx.SplitterWindow(self)
         
-        leftP = PanelViews.TreePanelView(splitter)
-        rightP = PanelViews.EditPanelView(splitter)
+        self.__treePanel = leftP = PanelViews.TreePanelView(splitter)
+        self.__editPanel = rightP = PanelViews.EditPanelView(splitter)
         
         #split
         splitter.SplitVertically(leftP, rightP)
@@ -57,19 +61,17 @@ class XmlBaseClass(wx.Frame):
         
     def onOpen(self, e):
         """ Open Text file """
-        """
+       
         self.dirname = ""
         baseclass = self
         dlg = wx.FileDialog(self, "Choose a file", self.dirname, "", "*.xml", wx.OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             self.filename = dlg.GetFilename()
             self.dirname = dlg.GetDirectory()
-            #f = open(os.path.join(self.dirname, self.filename), 'r')
-            #self.control.SetValue(f.read())
             cls1 = LoaderClass(os.path.join(self.dirname, self.filename))
-            cls1.LoadXMLFile(baseclass)
+            cls1.LoadXMLFile(baseclass, self.__treePanel, self.__editPanel)
         dlg.Destroy()
-    """
+    
         
         
 app = wx.App(False)
