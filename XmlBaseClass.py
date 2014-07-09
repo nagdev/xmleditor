@@ -9,8 +9,9 @@ class XmlBaseClass(wx.Frame):
     __editPanel = PanelViews.EditPanelView
     
     def __init__(self, parent, title):
-        wx.Frame.__init__(self, parent, title=title, size=(800, 600))
+        wx.Frame.__init__(self, parent, wx.ID_ANY, title, pos=(0, 0), size=wx.DisplaySize())
         self.CreateStatusBar()
+        
         
         filemenu = wx.Menu()
         menuOpen = filemenu.Append(wx.ID_OPEN, "&Open", "Open xml file")
@@ -30,12 +31,15 @@ class XmlBaseClass(wx.Frame):
         #split window
         splitter = wx.SplitterWindow(self)
         
+        
+        
         self.__treePanel = leftP = PanelViews.TreePanelView(splitter)
         self.__editPanel = rightP = PanelViews.EditPanelView(splitter)
         
         #split
         splitter.SplitVertically(leftP, rightP)
         splitter.SetMinimumPaneSize(200)
+        splitter.SetSashGravity(0.5)
         
         
         sizer = wx.BoxSizer(wx.VERTICAL)
@@ -43,7 +47,9 @@ class XmlBaseClass(wx.Frame):
         self.SetSizer(sizer)
         self.SetAutoLayout(True)
         
-    
+        self.Maximize()
+        
+        
         
     def onAbout(self, e):
         dlg = wx.MessageDialog(self, "XML Editor", "About XML Editor", wx.OK)
