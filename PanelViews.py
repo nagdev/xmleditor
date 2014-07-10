@@ -9,6 +9,7 @@ import wx.richtext
 from lxml import etree
 import wx.dataview as dv
 import wx.stc as stc
+from KeyEvents import KeyEvents
 
 
 class TreePanelView(wx.Panel):
@@ -65,6 +66,13 @@ class EditPanelView(wx.Panel):
     '''
     shows tree control in this panel
     '''
+    
+    __xmlRoot = None;
+    __xmlFile = None;
+    __xmlFileName = None;
+    __editor = None
+    __keyEvents = None
+    
     def __init__(self, parent):
         '''
         Constructor
@@ -74,13 +82,18 @@ class EditPanelView(wx.Panel):
         self.SetBackgroundColour('#D3D3D3')
         self.SetSizerAndFit(sizer)
     
-    def updateEditor(self, root):
+    def updateEditor(self, root, xmlFile, fileName, keyEvents):
+        
+        self.__xmlRoot = root
+        self.__xmlFile = xmlFile
+        self.__xmlFileName = fileName
+        self.__keyEvents = keyEvents
         
         self.SetBackgroundColour("white")
         
         xmltr = etree.tostring(root, encoding='utf8', method='xml')
         
-        editor = SourceXMLText(self, wx.ID_ANY)
+        self.__editor = editor = SourceXMLText(self, wx.ID_ANY)
         
         bsizer = wx.BoxSizer()
         bsizer.Add(editor, 1, wx.EXPAND)
@@ -94,6 +107,16 @@ class EditPanelView(wx.Panel):
         # line numbers in the margin
         editor.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         editor.SetMarginWidth(1, 40)
+        
+        self.__keyEvents.InitializeEditorEvents(editor)
+        
+    def SaveXML(self, e):
+            """
+                save current xml file
+            """
+            if self.__editor is not None:
+                print self.__editor.GetTextUTF8()
+            
         
 
 class SourceXMLText(stc.StyledTextCtrl):
@@ -218,10 +241,9 @@ class SourceXMLText(stc.StyledTextCtrl):
                 self.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#7F7F7F,face:%(mono)s,eol,size:%(size)d" % faces)
         
                 self.SetCaretForeground("BLUE")
-    
-    
+                
+                
         
-
 
 
 if wx.Platform == '__WXMSW__':

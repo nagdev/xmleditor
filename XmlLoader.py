@@ -4,17 +4,19 @@ import PanelViews
 import wx
 
 
+
 class XmlLoader():
     
-    __txt = ""
-    __tree = ""
-    __baseClass = ""
+    __txt = None
+    __tree = None
+    __baseClass = None
+    __keyEvents = None
     
     def __init__(self, filePath):
         """ app """#
         self.__txt = filePath
             
-    def LoadXMLFile(self, baseclass, treePanel, editPanel):
+    def LoadXMLFile(self, baseclass, treePanel, editPanel, fileName, keyEvents):
         self.__baseClass = baseclass
         xmlschema_doc = etree.parse("schema/proced.xsd")
         xmlschema = etree.XMLSchema(xmlschema_doc)
@@ -28,7 +30,7 @@ class XmlLoader():
             #self.__baseClass.DisplayInfo("Loaded XML is valid against Schema proced.xsd")
             root = self.__tree.getroot()
             treePanel.updateTree(root)
-            editPanel.updateEditor(root)
+            editPanel.updateEditor(root, self.__tree, fileName, keyEvents)
             
             
             
