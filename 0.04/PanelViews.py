@@ -11,8 +11,6 @@ import wx.dataview as dv
 import wx.stc as stc
 from KeyEvents import KeyEvents
 import xml.etree.ElementTree as ET
-import os
-import StringIO
 
 
 class TreePanelView(wx.Panel):
@@ -77,7 +75,6 @@ class EditPanelView(wx.Panel):
     __keyEvents = None
     __dir = None
     __filePath = None
-    __xmlEntity = None
     
     def __init__(self, parent):
         '''
@@ -88,7 +85,7 @@ class EditPanelView(wx.Panel):
         self.SetBackgroundColour('#D3D3D3')
         self.SetSizerAndFit(sizer)
     
-    def updateEditor(self, root, xmlFile, fileName, keyEvents, dir, filepath, xmlEntity):
+    def updateEditor(self, root, xmlFile, fileName, keyEvents, dir, filepath):
         
         self.__xmlRoot = root
         self.__xmlFile = xmlFile
@@ -96,7 +93,6 @@ class EditPanelView(wx.Panel):
         self.__keyEvents = keyEvents
         self.__dir = dir
         self.__filePath = filepath
-        self.__xmlEntity = xmlEntity
         
         self.SetBackgroundColour("white")
         
@@ -124,10 +120,25 @@ class EditPanelView(wx.Panel):
                 save current xml file
             """
             if self.__editor is not None:
-                newXmlElement = self.__xmlEntity+""+self.__editor.GetTextUTF8();
-                recovering_parser = etree.XMLParser(recover=True)
-                newTree = etree.parse(StringIO.StringIO(newXmlElement), parser=recovering_parser)
-                newTree.write(os.path.join(self.__dir, self.__xmlFileName), pretty_print=True, xml_declaration=True, encoding="utf-8")
+                xmlElement = etree.fromstring(self.__editor.GetTextUTF8())
+                
+                print self.__xmlRoot.getparent()
+                print self.__xmlRoot
+                print self.__xmlRoot.getparent()
+                
+                #nxml = etree.strip_elements(self.__xmlFile, with_tail=True, *self.__xmlRoot.tag)
+                
+                #print etree.tostring(self.__xmlFile)
+                """
+                tree = ET.parse(self.__filePath)
+                tree.remove(tree.getroot())
+                tree.append(xmlElement)
+                """
+                #print tree
+                
+                
+            
+        
 
 class SourceXMLText(stc.StyledTextCtrl):
         """

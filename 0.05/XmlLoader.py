@@ -54,28 +54,24 @@ class XmlLoader():
         recovering_parser = etree.XMLParser(recover=True)
         self.__tree = etree.parse(self.__txt, parser=recovering_parser)
         
+        #newTree = etree.tostring(transform(self.__tree))
+        #print newTree
+        
+        #self.__tree = etree.fromstring(newTree)
+        
+        print self.__tree 
+        
+        print xmlschema(self.__tree)
+        
         
         
         if not xmlschema(self.__tree):
             self.__baseClass.DisplayInfo("Loaded XML is not valid against Schema proced.xsd")            
         else:
             #self.__baseClass.DisplayInfo("Loaded XML is valid against Schema proced.xsd")
-            
-            
-            
             root = self.__tree.getroot()
-            
-            #get entity 
-            
-            xmlstr =  etree.tostring(self.__tree, xml_declaration=True, encoding="utf-8")
-            xmlstr.find("<"+root.tag, 0)
-            
-            xmlstrPos = etree.tostring(self.__tree, xml_declaration=True, encoding="utf-8").find("<"+root.tag, 0)
-            xmlEntity = xmlstr[0:xmlstrPos]
-            
-                        
             treePanel.updateTree(root)
-            editPanel.updateEditor(root, self.__tree, fileName, keyEvents, dir, self.__txt, xmlEntity)
+            editPanel.updateEditor(root, self.__tree, fileName, keyEvents, dir, self.__txt)
          
             
             
