@@ -135,7 +135,7 @@ class EditPanelView(wx.Panel, ContextMenu):
         self.SetBackgroundColour('#D3D3D3')
         self.SetSizerAndFit(sizer)
     
-    def updateEditor(self, root, xmlFile, fileName, keyEvents, dir, filepath, xmlEntity, xmlschema_doc):
+    def updateEditor(self, root, xmlFile, fileName, keyEvents, dir, filepath, xmlEntity):
         
         self.__xmlRoot = root
         self.__xmlFile = xmlFile
@@ -144,8 +144,6 @@ class EditPanelView(wx.Panel, ContextMenu):
         self.__dir = dir
         self.__filePath = filepath
         self.__xmlEntity = xmlEntity
-        self.xmlschema_doc = xmlschema_doc
-       
         
         self.SetBackgroundColour("white")
         
@@ -161,6 +159,9 @@ class EditPanelView(wx.Panel, ContextMenu):
         editor.EmptyUndoBuffer()
         editor.Colourise(0, -1)
         
+        tags = schemadoc.CreateFromDocument(xmltr)
+        
+        print tags.dmodule.identAndStatusSection
         
         # line numbers in the margin
         editor.SetMarginType(1, stc.STC_MARGIN_NUMBER)
@@ -184,40 +185,17 @@ class EditPanelView(wx.Panel, ContextMenu):
         tagNameStartPos = self.__editor.GetText().rfind('<', 0, pos)
         tagNameEndPos = self.__editor.GetText().rfind('>', 0, pos)
         tagNamePos =  self.__editor.GetText()[tagNameStartPos:tagNameEndPos]
-        print tagNamePos.find("/")
-        if tagNamePos.find("/", 0):
-            tagstate = "parent"
-        else:
-            tagstate = "child" 
-            
-        print tagNamePos
-        print tagstate
-        self.targetTag = re.search("[\w+]+", tagNamePos)
-        appendToText = self.targetTag.group() 
-                
-        if self.targetTag is not None:
-            self.getElems(self.xmlschema_doc, appendToText)
+        text = re.search("[\w+]+", tagNamePos)
+        
+        if text is not None:
             winpos = self.__editor.PointFromPosition(self.__editor.GetCurrentPos())
             ContextMenu.__init__(self, winpos, self)
-        
-    def getElems(self, xmlschema_doc, typeName):
-        print typeName
-        
-        names = xmlschema_doc.xpath("//xsd:element[@name = $n]/@name",
-                                    namespaces={
-                                      "xsd":"http://www.w3.org/2001/XMLSchema"},
-                                       n=typeName
-                                   )
-        
-        print names
+            
             
     def AddNewTag(self):
         self.__editor.InsertText(self.__editor.GetInsertionPoint(), "<yourtag>some text</yourtag>")
-        
-        
-        
-         
-             
+        #get tags from parsed scehma 
+                
             
             
          

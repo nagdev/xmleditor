@@ -1,4 +1,3 @@
-#editor base class
 import wx; import os; import wx.dataview as dv
 from XmlLoader import XmlLoader as LoaderClass
 import PanelViews
@@ -101,3 +100,7 @@ class XmlBaseClass(wx.Frame):
         
         
         
+app = wx.App(False)
+frame = XmlBaseClass(None, "XML Editor")
+frame.Show(True)
+app.MainLoop()
