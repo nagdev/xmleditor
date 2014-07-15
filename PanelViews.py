@@ -101,11 +101,6 @@ class ContextMenu(object):
     def onAddClick(self, e):
         self._menu.Destroy()
         self.editor.AddNewTag()
-        
-        
-            
-        
-    
     
         
 class EditPanelView(wx.Panel, ContextMenu):
@@ -168,6 +163,9 @@ class EditPanelView(wx.Panel, ContextMenu):
         editor.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         editor.SetMarginWidth(1, 40)
         
+        
+        #editor.autoindent() 
+        
         self.__keyEvents.InitializeEditorEvents(editor)
         
     def SaveXML(self, e):
@@ -179,7 +177,58 @@ class EditPanelView(wx.Panel, ContextMenu):
                 recovering_parser = etree.XMLParser(recover=True)
                 newTree = etree.parse(StringIO.StringIO(newXmlElement), parser=recovering_parser)
                 newTree.write(os.path.join(self.__dir, self.__xmlFileName), pretty_print=True, xml_declaration=True, encoding="utf-8")
-                
+    
+    def FindAndReplace(self):
+        searchText = self.__editor.GetSelectedText()
+        
+        data = wx.FindReplaceData()
+        data.SetFindString(searchText)
+        self.findReplaceData = data
+        dlg = wx.FindReplaceDialog(self, data, "Find")
+        
+    
+        dlg.Bind(wx.EVT_FIND, self.OnFind)
+        dlg.Bind(wx.EVT_FIND_NEXT, self.OnFind)
+        dlg.Bind(wx.EVT_FIND_REPLACE, self.OnFind)
+        dlg.Bind(wx.EVT_FIND_REPLACE_ALL, self.OnFind)
+        dlg.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
+        
+        dlg.Show()
+        self.findDialog = dlg
+       
+    def OnFind(self, evt):
+        #print repr(evt.GetFindString()), repr(self.findData.GetFindString())
+        
+        self.__editor.FindText(1, 200, "dmAddressItems")
+        
+        print "apple"
+        
+        map = {
+            wx.wxEVT_COMMAND_FIND : "FIND",
+            wx.wxEVT_COMMAND_FIND_NEXT : "FIND_NEXT",
+            wx.wxEVT_COMMAND_FIND_REPLACE : "REPLACE",
+            wx.wxEVT_COMMAND_FIND_REPLACE_ALL : "REPLACE_ALL",
+            }
+
+        et = evt.GetEventType()
+        
+        if et in map:
+            evtType = map[et]
+        else:
+            evtType = "**Unknown Event Type**"
+
+        if et in [wx.wxEVT_COMMAND_FIND_REPLACE, wx.wxEVT_COMMAND_FIND_REPLACE_ALL]:
+            replaceTxt = "Replace text: %s" % evt.GetReplaceString()
+        else:
+            replaceTxt = ""
+
+    
+
+
+    def OnFindClose(self, evt):
+        evt.GetDialog().Destroy()
+        
+                    
             
     def ShowTagLists(self):
         pos =  self.__editor.GetInsertionPoint()
@@ -254,6 +303,7 @@ class SourceXMLText(stc.StyledTextCtrl):
                 self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
                 self.SetMarginSensitive(2, True)
                 self.SetMarginWidth(2, 12)
+                
 
                 if self.fold_symbols == 0:
                     # Arrow pointing right for contracted folders, arrow pointing down for expanded
@@ -344,6 +394,9 @@ class SourceXMLText(stc.StyledTextCtrl):
                 self.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#7F7F7F,face:%(mono)s,eol,size:%(size)d" % faces)
         
                 self.SetCaretForeground("BLUE")
+            
+        
+                
                 
                 
         

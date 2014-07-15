@@ -1,58 +1,42 @@
+#!/usr/bin/python
+
+# customdialog2.py
+
 import wx
 
-class ContextMenu(object):
-    def __init__(self):
-        super(ContextMenu, self).__init__()
-        self._menu = None
-        self.OnContextMenu()
+class MyDialog(wx.Dialog):
+    def __init__(self, parent, id, title):
+        wx.Dialog.__init__(self, parent, id, title)
 
-    def OnContextMenu(self):
-        if self._menu is not None:
-            self._menu.Destroy()
-        self._menu = wx.Menu()
-        self.CreateContextMenu(self._menu)
-        self.PopupMenu(self._menu)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        stline = wx.StaticText(self, 11, 'Discipline ist Macht.')
+        vbox.Add(stline, 1, wx.ALIGN_CENTER|wx.TOP, 45)
+        sizer =  self.CreateButtonSizer(wx.NO|wx.YES|wx.HELP)
+        vbox.Add(sizer, 0, wx.ALIGN_CENTER)
+        self.SetSizer(vbox)
+        self.Bind(wx.EVT_BUTTON, self.OnYes, id=wx.ID_YES)
 
-    def CreateContextMenu(self, menu):
-        raise NotImplementedError
+    def OnYes(self, event):
+        self.Close()
 
-class MyList(wx.TreeCtrl, ContextMenu):
-    def __init__(self, parent, *args, **kwargs):
-        super(MyList, self).__init__(parent, style=wx.TR_DEFAULT_STYLE|wx.TR_HIDE_ROOT)
-        ContextMenu.__init__(self)
+class MyFrame(wx.Frame):
+    def __init__(self, parent, id, title):
+        wx.Frame.__init__(self, parent, id, title)
+        panel = wx.Panel(self, -1)
+        wx.Button(panel, 1, 'Show custom Dialog', (50,50))
+        self.Bind(wx.EVT_BUTTON, self.OnShowCustomDialog, id=1)
 
-        self.root = self.AddRoot('')
-        self.SetItemHasChildren(self.root, True)
+    def OnShowCustomDialog(self, event):
+        dia = MyDialog(self, -1, '')
+        val = dia.ShowModal()
+        dia.Destroy()
 
-        self.node1 = self.AppendItem(self.root, 'Node 1')
-        self.node2 = self.AppendItem(self.root, 'Node 2')
-        self.SetItemHasChildren(self.node2, True)
-        self.node3 = self.AppendItem(self.node2, 'Node 3')
+class MyApp(wx.App):
+    def OnInit(self):
+        frame = MyFrame(None, -1, 'customdialog2.py')
+        frame.Show(True)
+        frame.Centre()
+        return True
 
-    def CreateContextMenu(self, menu):
-        self._menu.Append(wx.ID_ADD)
-        self._menu.Append(wx.ID_DELETE)
-        self._menu.Append(wx.ID_EDIT)
-
-class MainFrame(wx.Frame):
-    def __init__(self, *args, **kwargs):
-        super(MainFrame, self).__init__(*args, **kwargs)
-
-        self.panel = wx.Panel(self)
-        self.tree = MyList(self.panel)
-        self.text = wx.TextCtrl(self.panel)
-
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
-        sizer.Add(self.tree, 1, wx.EXPAND)
-        sizer.Add(self.text, 2, wx.EXPAND)
-        self.panel.SetSizer(sizer)
-
-        self.panel.Fit()
-        self.SetInitialSize()
-
-class App(wx.App):
-    def __init__(self):
-        super(App, self).__init__()
-        MainFrame(None, title='Test').Show()
-
-App().MainLoop()
+app = MyApp(0)
+app.MainLoop()
