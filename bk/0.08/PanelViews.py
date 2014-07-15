@@ -73,15 +73,13 @@ class ContextMenu(object):
     
     winpos = None
     editor = None
-    dict = {}
     
     
-    def __init__(self, winpos, editor, tags):
+    def __init__(self, winpos, editor):
         super(ContextMenu, self).__init__()
         self._menu = None
         self.winpos = winpos
         self.editor = editor
-        self.tags = tags
         self.OnContextMenu()
         
 
@@ -95,17 +93,17 @@ class ContextMenu(object):
         
     
     def CreateContextMenu(self, menu):
-        listCt = 205
-        for tag in self.tags:
-            contextMenuAdd = self._menu.Append(listCt, "&"+tag.get("ref"))
-            self._menu.Bind(wx.EVT_MENU, self.onAddClick, id=listCt)
-            self.dict[listCt] = tag.get("ref")
-            listCt = listCt + 1
+        contextMenuAdd = self._menu.Append(wx.ID_ADD)
+        self._menu.Bind(wx.EVT_MENU, self.onAddClick, contextMenuAdd)
+        
+    def onAddClick(self, e):
+        self._menu.Destroy()
+        self.editor.AddNewTag()
+        
+        
             
         
-    def onAddClick(self, event):
-        self._menu.Destroy()
-        self.editor.AddNewTag(self.dict[event.GetId()])
+    
     
         
 class EditPanelView(wx.Panel, ContextMenu):
@@ -137,7 +135,7 @@ class EditPanelView(wx.Panel, ContextMenu):
         self.SetBackgroundColour('#D3D3D3')
         self.SetSizerAndFit(sizer)
     
-    def updateEditor(self, root, xmlFile, fileName, keyEvents, dir, filepath, xmlEntity, xmlschema_doc):
+    def updateEditor(self, root, xmlFile, fileName, keyEvents, dir, filepath, xmlEntity):
         
         self.__xmlRoot = root
         self.__xmlFile = xmlFile
@@ -146,8 +144,6 @@ class EditPanelView(wx.Panel, ContextMenu):
         self.__dir = dir
         self.__filePath = filepath
         self.__xmlEntity = xmlEntity
-        self.xmlschema_doc = xmlschema_doc
-       
         
         self.SetBackgroundColour("white")
         
@@ -163,13 +159,13 @@ class EditPanelView(wx.Panel, ContextMenu):
         editor.EmptyUndoBuffer()
         editor.Colourise(0, -1)
         
+        tags = schemadoc.CreateFromDocument(xmltr)
+        
+        print tags.dmodule.identAndStatusSection
         
         # line numbers in the margin
         editor.SetMarginType(1, stc.STC_MARGIN_NUMBER)
         editor.SetMarginWidth(1, 40)
-        
-        
-        #editor.autoindent() 
         
         self.__keyEvents.InitializeEditorEvents(editor)
         
@@ -182,107 +178,24 @@ class EditPanelView(wx.Panel, ContextMenu):
                 recovering_parser = etree.XMLParser(recover=True)
                 newTree = etree.parse(StringIO.StringIO(newXmlElement), parser=recovering_parser)
                 newTree.write(os.path.join(self.__dir, self.__xmlFileName), pretty_print=True, xml_declaration=True, encoding="utf-8")
-    
-    def FindAndReplace(self):
-        searchText = self.__editor.GetSelectedText()
-        
-        data = wx.FindReplaceData()
-        data.SetFindString(searchText)
-        self.findReplaceData = data
-        dlg = wx.FindReplaceDialog(self, data, "Find")
-        
-    
-        dlg.Bind(wx.EVT_FIND, self.OnFind)
-        dlg.Bind(wx.EVT_FIND_NEXT, self.OnFind)
-        dlg.Bind(wx.EVT_FIND_REPLACE, self.OnFind)
-        dlg.Bind(wx.EVT_FIND_REPLACE_ALL, self.OnFind)
-        dlg.Bind(wx.EVT_FIND_CLOSE, self.OnFindClose)
-        
-        dlg.Show()
-        self.findDialog = dlg
-       
-    def OnFind(self, evt):
-        #print repr(evt.GetFindString()), repr(self.findData.GetFindString())
-        self.__editor.FindText(1, 200, "dmAddressItems")
-        
-        map = {
-            wx.wxEVT_COMMAND_FIND : "FIND",
-            wx.wxEVT_COMMAND_FIND_NEXT : "FIND_NEXT",
-            wx.wxEVT_COMMAND_FIND_REPLACE : "REPLACE",
-            wx.wxEVT_COMMAND_FIND_REPLACE_ALL : "REPLACE_ALL",
-            }
-
-        et = evt.GetEventType()
-        
-        if et in map:
-            evtType = map[et]
-        else:
-            evtType = "**Unknown Event Type**"
-
-        if et in [wx.wxEVT_COMMAND_FIND_REPLACE, wx.wxEVT_COMMAND_FIND_REPLACE_ALL]:
-            replaceTxt = "Replace text: %s" % evt.GetReplaceString()
-        else:
-            replaceTxt = ""
-
-    
-
-
-    def OnFindClose(self, evt):
-        evt.GetDialog().Destroy()
-        
-                    
+                
             
     def ShowTagLists(self):
         pos =  self.__editor.GetInsertionPoint()
         tagNameStartPos = self.__editor.GetText().rfind('<', 0, pos)
         tagNameEndPos = self.__editor.GetText().rfind('>', 0, pos)
         tagNamePos =  self.__editor.GetText()[tagNameStartPos:tagNameEndPos]
-        if tagNamePos.find("/", 0) < 0:
-            tagstate = "child"
-        else:
-            tagstate = "parent"
-        self.targetTag = re.search("[\w+]+", tagNamePos)
-        appendToText = self.targetTag.group() 
-                
-        if self.targetTag is not None:
-            tags = self.getElems(self.xmlschema_doc, appendToText)
+        text = re.search("[\w+]+", tagNamePos)
+        
+        if text is not None:
             winpos = self.__editor.PointFromPosition(self.__editor.GetCurrentPos())
-            ContextMenu.__init__(self, winpos, self, tags)
-        
-    def getElems(self, xmlschema_doc, typeName):
-        names = xmlschema_doc.xpath("//xs:complexType[@name = $n]/xs:sequence/xs:element",
-                                    namespaces={
-                                      "xs":"http://www.w3.org/2001/XMLSchema"},
-                                       n=typeName+"ElemType"
-                                   )
-        
-        
-     
-        return names
-        
-        #print etree.SubElement(xmlschema_doc, names[0])
+            ContextMenu.__init__(self, winpos, self)
             
-    def AddNewTag(self, tag):
-        """
-         get all attribute for given parent tag using xpath
-        """
-        
-        attributes = self.xmlschema_doc.xpath("//xs:complexType[@name = $n]/xs:attribute",
-                                    namespaces={
-                                      "xs":"http://www.w3.org/2001/XMLSchema"},
-                                       n=tag+"ElemType"
-                                   )
-        
-        
-     
-        print attributes
-        
-        
-        
-        
-        
-         
-             
+            
+    def AddNewTag(self):
+        self.__editor.InsertText(self.__editor.GetInsertionPoint(), "<yourtag>some text</yourtag>")
+        #get tags from parsed scehma 
+                
             
             
          
@@ -319,7 +232,6 @@ class SourceXMLText(stc.StyledTextCtrl):
                 self.SetMarginMask(2, stc.STC_MASK_FOLDERS)
                 self.SetMarginSensitive(2, True)
                 self.SetMarginWidth(2, 12)
-                
 
                 if self.fold_symbols == 0:
                     # Arrow pointing right for contracted folders, arrow pointing down for expanded
@@ -410,15 +322,13 @@ class SourceXMLText(stc.StyledTextCtrl):
                 self.StyleSetSpec(stc.STC_P_STRINGEOL, "fore:#7F7F7F,face:%(mono)s,eol,size:%(size)d" % faces)
         
                 self.SetCaretForeground("BLUE")
-            
-        
-                
                 
                 
         
 
 
 if wx.Platform == '__WXMSW__':
+    print wx.Platform
     faces = { 'times': 'Arial',
               'mono' : 'Arial',
               'helv' : 'Arial',

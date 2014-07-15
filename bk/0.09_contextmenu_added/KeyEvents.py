@@ -39,10 +39,8 @@ class KeyEvents(wx.Frame):
             self.__baseClass.onExit(e = None)
         if key == "Ctrl+S":
             self.__baseClass.onSave(e = None)
-        if key == "Ctrl+Enter":
+        if key == "Ctrl+Shift+K":
             self.__sourcePanel.ShowTagLists()
-        if key == "Ctrl+F":
-            self.__sourcePanel.FindAndReplace()
             
     
             
@@ -101,10 +99,6 @@ def GetKeyPress(evt):
             keyname = chr(keycode)
         else:
             keyname = "(%s)unknown" % keycode
-            
-    if evt.GetKeyCode() == wx.WXK_RETURN and modifiers == 'Ctrl+':
-        keyname = "Enter"
-        print keyname
     return modifiers + keyname
         
         
