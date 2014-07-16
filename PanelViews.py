@@ -106,6 +106,74 @@ class ContextMenu(object):
     def onAddClick(self, event):
         self._menu.Destroy()
         self.editor.AddNewTag(self.dict[event.GetId()])
+        
+    
+class AttributesDialog(wx.Dialog):
+    """
+     pop dialog for adding tag attriubues
+    """
+    attibutesDialog = {}
+    
+    def __init__(self, parent, ID, title, size=wx.DefaultSize, pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE):
+        
+        
+        pre = wx.PreDialog()
+        pre.SetExtraStyle(wx.DIALOG_EX_CONTEXTHELP)
+        pre.Create(parent, ID, title, pos, size, style)
+        
+        self.PostCreate(pre)
+        
+        
+        # contents
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        label = wx.StaticText(self, -1, "Element: "+parent.childTag)
+        label.SetHelpText("Attributes for "+parent.childTag)
+        sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        ##################################attribues
+        
+        for attribute in parent.attributes:
+            attr =  attribute.get("ref")
+            
+            box = wx.BoxSizer(wx.HORIZONTAL)
+
+            label = wx.StaticText(self, -1, attr+":")
+            label.SetHelpText("This is the help text for the "+attr)
+            box.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+    
+            text = wx.TextCtrl(self, -1, "", size=(80,-1))
+            text.SetHelpText("Here's some help text for "+attr)
+            box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
+            
+            self.attibutesDialog[attr] = text
+    
+            sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        #######################################end
+
+        line = wx.StaticLine(self, -1, size=(20,-1), style=wx.LI_HORIZONTAL)
+        sizer.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+
+        btnsizer = wx.StdDialogButtonSizer()
+        
+        if wx.Platform != "__WXMSW__":
+            btn = wx.ContextHelpButton(self)
+            btnsizer.AddButton(btn)
+        
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetHelpText("The OK button completes the dialog")
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
+
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btn.SetHelpText("The Cancel button cancels the dialog. (Cool, huh?)")
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
+
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        self.SetSizer(sizer)
+        sizer.Fit(self)
     
         
 class EditPanelView(wx.Panel, ContextMenu):
@@ -266,7 +334,7 @@ class EditPanelView(wx.Panel, ContextMenu):
         """
          get all attribute for given parent tag using xpath
         """
-        
+        self.childTag = tag
         attributes = self.xmlschema_doc.xpath("//xs:complexType[@name = $n]/xs:attribute",
                                     namespaces={
                                       "xs":"http://www.w3.org/2001/XMLSchema"},
@@ -274,17 +342,38 @@ class EditPanelView(wx.Panel, ContextMenu):
                                    )
         
         
-     
-        print attributes
+        self.attributes = attributes
         
+        if len(attributes) > 0:
+            dlg = AttributesDialog(self, -1, "Attributes", size=(350, 200), pos=wx.DefaultPosition, style=wx.DEFAULT_DIALOG_STYLE)
+            dlg.CenterOnScreen()
+            # this does not return until the dialog is closed.
+            val = dlg.ShowModal()
+            attr = ""
+            if val == wx.ID_OK:
+               print dlg.attibutesDialog
+               for attrlist in dlg.attibutesDialog:
+                   attrvalue = dlg.attibutesDialog[attrlist].GetValue()
+                   attr += attrlist+"=\""+attrvalue+"\" "
+                    
+            else:
+                pass
+            dlg.Destroy()
+            newChildTag = "<"+tag+" "+attr+"></"+tag+">"
+            self.__editor.InsertText(self.__editor.GetInsertionPoint(), newChildTag)
+        else:
+            #add child tag directly
+            newChildTag = "<"+tag+"></"+tag+">"
+            self.__editor.InsertText(self.__editor.GetInsertionPoint(), newChildTag) 
         
-        
-        
-        
-         
-             
+    def updateXML(self):
+        pass
+    
             
-            
+        
+        
+        
+
          
 
 class SourceXMLText(stc.StyledTextCtrl):
@@ -414,7 +503,8 @@ class SourceXMLText(stc.StyledTextCtrl):
         
                 
                 
-                
+provider = wx.SimpleHelpProvider()
+wx.HelpProvider.Set(provider)                
         
 
 

@@ -1,161 +1,146 @@
-##  StyledTextCtrl Log Window Demo
-#
-# Last modified: 23 July 2006
-#
-# Tested On:
-#       Window XP with Python 2.4 and wxPython 2.6.3 (Unicode)
-#       Debian GNU/Linux 3.1 (Sarge) with Python 2.3 and wxPython 2.6.3 (Unicode)
-#
-# The purpose of this program is to illustrate a very simple but useful
-# application of a StyledTextCtrl.
-#
-# The StyledTextCtrl is complicated and some people find it hard to get
-# started with it.  This demo, shows that programers can start to reap the
-# benefits of using a StyledTextCtrl with very little effort.
-#
-# Normally a wx.Text control is used for log windows, however, using a
-# StyledTextCtrl has the advantage of allowing the user to zoom the text
-# in the control using CTRL-+ and CTRL--.  This facility is availiable by
-# default, you get if for free!, and you have the option of using coloured
-# messages too.
-#
 
-import wx
-import wx.stc as stc
+import  wx
 
-class Log(stc.StyledTextCtrl):
-    """
-    Subclass the StyledTextCtrl to provide  additions
-    and initializations to make it useful as a log window.
+#---------------------------------------------------------------------------
+# Create and set a help provider.  Normally you would do this in
+# the app's OnInit as it must be done before any SetHelpText calls.
+provider = wx.SimpleHelpProvider()
+wx.HelpProvider.Set(provider)
 
-    """
-    def __init__(self, parent, style=wx.SIMPLE_BORDER):
-        """
-        Constructor
+#---------------------------------------------------------------------------
+
+class TestDialog(wx.Dialog):
+    def __init__(
+            self, parent, ID, title, size=wx.DefaultSize, pos=wx.DefaultPosition, 
+            style=wx.DEFAULT_DIALOG_STYLE,
+            ):
+
+        # Instead of calling wx.Dialog.__init__ we precreate the dialog
+        # so we can set an extra style that must be set before
+        # creation, and then we create the GUI object using the Create
+        # method.
+        pre = wx.PreDialog()
+        pre.SetExtraStyle(wx.DIALOG_EX_CONTEXTHELP)
+        pre.Create(parent, ID, title, pos, size, style)
+
+        # This next step is the most important, it turns this Python
+        # object into the real wrapper of the dialog (instead of pre)
+        # as far as the wxPython extension is concerned.
+        self.PostCreate(pre)
+
+        # Now continue with the normal construction of the dialog
+        # contents
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        label = wx.StaticText(self, -1, "This is a wx.Dialog")
+        label.SetHelpText("This is the help text for the label")
+        sizer.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+
+        label = wx.StaticText(self, -1, "Field #1:")
+        label.SetHelpText("This is the help text for the label")
+        box.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        text = wx.TextCtrl(self, -1, "", size=(80,-1))
+        text.SetHelpText("Here's some help text for field #1")
+        box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+
+        label = wx.StaticText(self, -1, "Field #2:")
+        label.SetHelpText("This is the help text for the label")
+        box.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        text = wx.TextCtrl(self, -1, "", size=(80,-1))
+        text.SetHelpText("Here's some help text for field #2")
+        box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+
+        line = wx.StaticLine(self, -1, size=(20,-1), style=wx.LI_HORIZONTAL)
+        sizer.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+
+        btnsizer = wx.StdDialogButtonSizer()
         
-        """
-        stc.StyledTextCtrl.__init__(self, parent, style=style)
-        self._styles = [None]*32
-        self._free = 1
-
-    def getStyle(self, c='black'):
-        """
-        Returns a style for a given colour if one exists.  If no style
-        exists for the colour, make a new style.
+        if wx.Platform != "__WXMSW__":
+            btn = wx.ContextHelpButton(self)
+            btnsizer.AddButton(btn)
         
-        If we run out of styles, (only 32 allowed here) we go to the top
-        of the list and reuse previous styles.
+        btn = wx.Button(self, wx.ID_OK)
+        btn.SetHelpText("The OK button completes the dialog")
+        btn.SetDefault()
+        btnsizer.AddButton(btn)
 
-        """
-        free = self._free
-        if c and isinstance(c, (str, unicode)):
-            c = c.lower()
-        else:
-            c = 'black'
+        btn = wx.Button(self, wx.ID_CANCEL)
+        btn.SetHelpText("The Cancel button cancels the dialog. (Cool, huh?)")
+        btnsizer.AddButton(btn)
+        btnsizer.Realize()
 
-        try:
-            style = self._styles.index(c)
-            return style
+        sizer.Add(btnsizer, 0, wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
-        except ValueError:
-            style = free
-            self._styles[style] = c
-            self.StyleSetForeground(style, wx.NamedColour(c))
+        self.SetSizer(sizer)
+        sizer.Fit(self)
 
-            free += 1
-            if free >31:
-                free = 0
-            self._free = free
-            return style
-
-    def write(self, text, c=None):
-        """
-        Add the text to the end of the control using colour c which
-        should be suitable for feeding directly to wx.NamedColour.
-        
-        'text' should be a unicode string or contain only ascii data.
-        """
-        style = self.getStyle(c)
-        lenText = len(text.encode('utf8'))
-        end = self.GetLength()
-        self.AddText(text)
-        self.StartStyling(end, 31)
-        self.SetStyling(lenText, style)
-        self.EnsureCaretVisible()
-
-
-    __call__ = write
-
+#---------------------------------------------------------------------------
 
 class TestPanel(wx.Panel):
     def __init__(self, parent, log):
         self.log = log
-        self.colour = 'black'
-        log('Welcom to wxPython %s' % wx.VERSION_STRING, 'blue')
-        log('\n\n[')
-        log(u'Unicode Test 1: \u041f\u0438\u0442\u043e\u043d \u0435 \u043d\u0430\u0439-\u0434\u043e\u0431\u0440\u0438\u044f \u043f\u0440\u043e\u0433\u0440\u0430\u043c\u0435\u043d \u0435\u0437\u0438\u043a!', 'red')
-        log(']')
-        log('\n\n[')
-        log(u'Unicode Test 2: \u041f\u0438\u0442\u043e\u043d - \u043b\u0443\u0447\u0448\u0438\u0439 \u044f\u0437\u044b\u043a \n\u043f\u0440\u043e\u0433\u0440\u0430\u043c\u043c\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f!', 'blue')
-        log(']')
-
-        log(u'\n\n[Unicode Test 3: x')
-        log(u'\u00a3', 'red')
-        log(u'x]')
-
-        log('\n\nUse your mouse buttons to click on the')
-        log(' coloured ', 'cyan')
-        log('panel and ')
-        log('buttons ', 'red')
-        log( 'above.')
-        log('\n\nUse ')
-        log('Ctrl-+ and Ctrl-- or Ctrl-ScrollWheel', 'blue')
-        log(' to zoom text in this window.\n')
         wx.Panel.__init__(self, parent, -1)
 
-        self.SetBackgroundColour('cyan')
+        b = wx.Button(self, -1, "Create and Show a custom Dialog", (50,50))
+        self.Bind(wx.EVT_BUTTON, self.OnButton, b)
 
-        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        b = wx.Button(self, -1, "Show dialog with ShowWindowModal", (50, 140))
+        self.Bind(wx.EVT_BUTTON, self.OnShowWindowModal, b)
+        self.Bind(wx.EVT_WINDOW_MODAL_DIALOG_CLOSED, self.OnWindowModalDialogClosed)
+        
 
-        self.Bind(wx.EVT_LEFT_DOWN, lambda e:self.OnMouse(e, 'Left'))
-        self.Bind(wx.EVT_RIGHT_DOWN, lambda e:self.OnMouse(e, 'Right'))
-        self.Bind(wx.EVT_MIDDLE_DOWN, lambda e:self.OnMouse(e, 'Middle'))
+    def OnButton(self, evt):
+        dlg = TestDialog(self, -1, "Sample Dialog", size=(350, 200),
+                         style=wx.DEFAULT_DIALOG_STYLE,
+                         )
+        dlg.CenterOnScreen()
 
-        for i in ('red', 'green', 'blue', 'cyan', 'magenta'):
-            btn = wx.Button(self, -1, i)
-            sizer.Add(btn, 1, wx.TOP|wx.BOTTOM, 15)
-            btn.Bind(wx.EVT_BUTTON, self.OnButton)
+        # this does not return until the dialog is closed.
+        val = dlg.ShowModal()
+    
+        if val == wx.ID_OK:
+            self.log.WriteText("You pressed OK\n")
+        else:
+            self.log.WriteText("You pressed Cancel\n")
 
-        self.SetSizer(sizer)
+        dlg.Destroy()
+        
 
-    def OnMouse(self, event, type):
-        self.log('\n\n%s Mouse Button Clicked'%type, self.colour)
-        event.Skip()
-
-    def OnButton(self, event):
-        btn = event.GetEventObject()
-        label = btn.GetLabel()
-        self.colour = label
-        self.log('\n\n%s button clicked'%label, label)
-        event.Skip()
-
-
-class TestFrame(wx.Frame):
-
-    def __init__(self):
-        wx.Frame.__init__(self, None, -1, 'StyledTextCtrl Log Panel Demo')
-
-        log = Log(self)
-        tp = TestPanel(self, log)
-        sizer = wx.BoxSizer(wx.VERTICAL)
-        sizer.Add(tp, 0, wx.EXPAND)
-        sizer.Add(log, 1, wx.EXPAND)
-        self.SetSizer(sizer)
-        self.SetSize((400, 300))
+    def OnShowWindowModal(self, evt):
+        dlg = TestDialog(self, -1, "Sample Dialog", size=(350, 200),
+                         style=wx.DEFAULT_DIALOG_STYLE)
+        dlg.ShowWindowModal()
 
 
-if __name__=="__main__":
-    app = wx.App()
-    win = TestFrame()
-    win.Show(True)
-    app.MainLoop()
+    def OnWindowModalDialogClosed(self, evt):
+        dialog = evt.GetDialog()
+        val = evt.GetReturnCode()
+        try:
+            btnTxt = { wx.ID_OK : "OK",
+                       wx.ID_CANCEL: "Cancel" }[val]
+        except KeyError:
+            btnTxt = '<unknown>'
+            
+        wx.MessageBox("You closed the window-modal dialog with the %s button" % btnTxt)
+
+        dialog.Destroy()
+
+#
+class MyApp(wx.App):
+    def OnInit(self):
+        frame = TestPanel(None, -1)
+        frame.Show(True)
+        return True
+
+app = MyApp(0)
+app.MainLoop()
